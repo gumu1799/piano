@@ -1,5 +1,3 @@
-import type { CalibrationPoint } from '../../types';
-
 export interface ICalibration {
   mapCameraToDisplay(camX: number, camY: number): { x: number; y: number };
 }
@@ -13,13 +11,17 @@ export interface ICalibration {
  * Formula: displayX = ((camX - 0.5) * xSpread + 0.5) * displayWidth
  */
 export class LinearCalibration implements ICalibration {
+  private displayWidth: number;
+  private displayHeight: number;
   private xSpread: number;
 
   constructor(
-    private displayWidth: number,
-    private displayHeight: number,
+    displayWidth: number,
+    displayHeight: number,
     xSpread = 2.0
   ) {
+    this.displayWidth = displayWidth;
+    this.displayHeight = displayHeight;
     this.xSpread = xSpread;
   }
 
@@ -43,10 +45,8 @@ export class LinearCalibration implements ICalibration {
 }
 
 export class PerspectiveCalibration implements ICalibration {
-  private _points: CalibrationPoint[] = [];
-
-  setPoints(points: CalibrationPoint[]) {
-    this._points = points;
+  setPoints(_points: { cameraX: number; cameraY: number; screenX: number; screenY: number }[]) {
+    // stub for future 4-point calibration
   }
 
   mapCameraToDisplay(camX: number, camY: number): { x: number; y: number } {

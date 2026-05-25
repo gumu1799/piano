@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { handTracker } from '../engine/hand/HandTracker';
 import { GestureDetector, type CalibrationState } from '../engine/hand/GestureDetector';
 import { LinearCalibration } from '../engine/hand/Calibration';
-import type { HandResult, FingerEvent, PianoKey, AppStatus } from '../types';
+import type { HandResult, PianoKey, AppStatus } from '../types';
 import { buildPianoKeys } from '../engine/piano/PianoModel';
 
 interface UseHandTrackingOptions {

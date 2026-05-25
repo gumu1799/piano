@@ -56,7 +56,6 @@ export class GestureDetector {
   // Calibration state
   private calibrationState: CalibrationState = 'idle';
   private calibrationStartTime = 0;
-  private calibrationStartY = 0;
   private calibrationStableY = 0;
   private baselineY: number | null = null;
   private lastCalibrationY = 0;
@@ -99,7 +98,6 @@ export class GestureDetector {
       // Start calibrating
       this.calibrationState = 'calibrating';
       this.calibrationStartTime = now;
-      this.calibrationStartY = indexTip.y;
       this.calibrationStableY = indexTip.y;
       this.lastCalibrationY = indexTip.y;
       this.onCalibrationChange?.('calibrating', 0);

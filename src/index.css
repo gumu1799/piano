@@ -1,0 +1,597 @@
+/* ---- Reset & Global ---- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0f1117;
+  --surface: rgba(26, 29, 39, 0.85);
+  --surface2: #232733;
+  --text: #c9cdd4;
+  --text-dim: #6b7080;
+  --accent: #7c4dff;
+  --accent-light: #b388ff;
+  --green: #4caf50;
+  --green-light: #c8e6c9;
+  --red: #ff5252;
+  --blue: #448aff;
+  --orange: #ff6d00;
+  --cyan: #00e5ff;
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  background: #000;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- App Full-Screen Layout ---- */
+.app {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---- Floating Panel (shared) ---- */
+.floating-panel {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 14px;
+  position: absolute;
+  z-index: 10;
+}
+
+/* ---- Camera Container (full-screen) ---- */
+.camera-container {
+  position: absolute;
+  inset: 0;
+  background: #000;
+}
+
+.camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.camera-placeholder {
+  display: none;
+}
+
+.camera-placeholder-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.camera-placeholder-text .camera-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.camera-placeholder-text p {
+  margin: 2px 0;
+  font-size: 14px;
+}
+
+.hand-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* ---- App Header (top center, subtle) ---- */
+.app-header {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  pointer-events: none;
+}
+
+.app-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  letter-spacing: -0.3px;
+}
+
+/* ---- Control Panel (top right) ---- */
+.control-panel {
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: calc(100vw - 280px);
+}
+
+/* ---- Practice Panel (top left) ---- */
+.practice-panel {
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+  max-width: 260px;
+}
+
+@media (max-width: 768px) {
+  .practice-panel {
+    display: none;
+  }
+}
+
+/* ---- Hand Status (bottom left) ---- */
+.hand-status {
+  bottom: 120px;
+  left: 12px;
+  font-size: 13px;
+}
+
+.hand-detected {
+  color: var(--green);
+}
+
+.hand-none {
+  color: var(--text-dim);
+}
+
+/* ---- Floating Error ---- */
+.floating-error {
+  bottom: 60px;
+  right: 12px;
+  color: var(--red);
+  font-size: 13px;
+  z-index: 20;
+  background: rgba(255, 82, 82, 0.15);
+  border-radius: 8px;
+  padding: 8px 14px;
+  max-width: 320px;
+}
+
+/* ---- Piano Section (bottom center, seamless, player perspective) ---- */
+.piano-section {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9;
+  background: transparent;
+  padding: 0;
+  border: none;
+  /* Player's front-top perspective — like sitting at a real piano */
+  perspective: 600px;
+}
+
+.piano-hint {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  text-align: center;
+}
+
+.piano-wrapper {
+  overflow: hidden;
+  max-width: 100vw;
+  /* 3D tilt: top recedes, bottom is closer (player view) */
+  transform: rotateX(25deg);
+  transform-origin: bottom center;
+}
+
+.piano-wrapper svg {
+  display: block;
+}
+
+/* Bottom gradient overlay on camera to help keyboard blend in */
+.camera-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 300px;
+  background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 60%, transparent 100%);
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* ---- Calibration Indicator (center of camera) ---- */
+.calibration-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.calibration-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+.calibration-text.done {
+  color: #4caf50;
+}
+
+.calibration-done {
+  animation: calib-fadeout 0.3s ease 1s forwards;
+}
+
+@keyframes calib-fadeout {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@media (max-width: 768px) {
+  .piano-section {
+    bottom: 0;
+  }
+  .hand-status {
+    bottom: 90px;
+  }
+}
+
+/* ---- Status Badge ---- */
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.status-dot.active {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+
+.status-dot.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+  background: var(--accent);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* ---- Buttons ---- */
+.btn {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.btn:active {
+  opacity: 0.8;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--accent-light);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-outline:hover {
+  border-color: var(--accent);
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+}
+
+.btn-sm.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-sm:hover {
+  opacity: 0.85;
+}
+
+.btn-end-session {
+  padding: 5px 12px;
+  font-size: 12px;
+  background: rgba(255, 82, 82, 0.25);
+  color: #ff8a80;
+  border: 1px solid rgba(255, 82, 82, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.btn-end-session:hover {
+  background: rgba(255, 82, 82, 0.4);
+}
+
+.control-buttons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.mode-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+/* ---- Practice Panel Contents ---- */
+.feedback {
+  min-height: 20px;
+}
+
+.feedback-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.scale-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.progress-bar {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.target-notes {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.target-note {
+  padding: 2px 7px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  color: var(--text-dim);
+}
+
+.target-note.completed {
+  background: rgba(76, 175, 80, 0.18);
+  color: var(--green-light);
+}
+
+.target-note.current {
+  background: rgba(124, 77, 255, 0.22);
+  color: var(--accent-light);
+  outline: 1px solid var(--accent);
+}
+
+.score-board {
+  display: flex;
+  gap: 16px;
+}
+
+.score-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.score-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.score-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.recent-notes {
+  font-size: 12px;
+  color: var(--text-dim);
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.recent-label {
+  color: var(--text-dim);
+}
+
+.recent-note {
+  padding: 1px 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  font-weight: 500;
+  color: var(--accent-light);
+}
+
+/* ---- AI Scoring Overlay ---- */
+.scoring-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgba(5, 5, 15, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scoring-card {
+  text-align: center;
+  max-width: 420px;
+  padding: 40px 32px;
+}
+
+.scoring-spinner {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 28px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.scoring-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 20px;
+  min-height: 28px;
+  transition: opacity 0.3s;
+}
+
+.scoring-progress-bar {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.scoring-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.scoring-subtitle {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.scoring-score {
+  font-size: 96px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 4px;
+  text-shadow: 0 0 40px rgba(124, 77, 255, 0.5);
+}
+
+.scoring-label {
+  font-size: 20px;
+  color: var(--text-dim);
+  margin: 0 0 24px;
+}
+
+.scoring-encouragements {
+  margin-bottom: 28px;
+}
+
+.scoring-encouragement {
+  font-size: 15px;
+  color: var(--text);
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.scoring-restart {
+  padding: 10px 32px;
+  font-size: 15px;
+}

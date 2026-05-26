@@ -1,6 +1,7 @@
 /**
  * AudioEngine — Web Audio API synthesis with ADSR, harmonics, polyphony.
- * Each note gets its own set of oscillators and gain node so notes don't cut each other off.
+ * Piano-like envelope: quick attack, natural decay to silence (no sustain).
+ * Each note naturally fades out, so stuck notes won't ring forever.
  */
 
 interface ActiveVoice {
@@ -10,7 +11,7 @@ interface ActiveVoice {
   releasedAt: number | null;
 }
 
-const HARMONIC_GAINS = [1.0, 0.5, 0.25, 0.12]; // fundamental, 2nd, 3rd, 4th
+const HARMONIC_GAINS = [1.0, 0.5, 0.25, 0.12];
 
 export class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -40,12 +41,10 @@ export class AudioEngine {
     }
   }
 
-  /** Start a note (MIDI number + frequency). Non-blocking — creates fresh oscillators. */
   noteOn(midi: number, frequency: number): void {
     this.ensureCtx();
     const ctx = this.ctx!;
 
-    // If same note already playing, release it first
     if (this.voices.has(midi)) {
       this.noteOff(midi);
     }
@@ -55,6 +54,10 @@ export class AudioEngine {
     gainNode.connect(this.masterGain!);
 
     const oscillators: OscillatorNode[] = [];
+
+    // Piano-like envelope: attack → natural decay to silence
+    const attackTime = 0.005;
+    const decayTime = 1.2; // decay to silence over 1.2s (like a real piano)
 
     for (let h = 0; h < HARMONIC_GAINS.length; h++) {
       const osc = ctx.createOscillator();
@@ -67,17 +70,15 @@ export class AudioEngine {
       osc.connect(harmonicGain);
       harmonicGain.connect(gainNode);
 
-      // ADSR envelope per harmonic
       const gain = HARMONIC_GAINS[h];
-      const attackTime = 0.008;
-      const decayTime = 0.08;
-      const sustainLevel = gain * 0.35;
 
       harmonicGain.gain.setValueAtTime(0, now);
       harmonicGain.gain.linearRampToValueAtTime(gain, now + attackTime);
-      harmonicGain.gain.linearRampToValueAtTime(sustainLevel, now + attackTime + decayTime);
+      harmonicGain.gain.exponentialRampToValueAtTime(0.001, now + attackTime + decayTime);
 
       osc.start(now);
+      // Auto-stop after full decay
+      osc.stop(now + attackTime + decayTime + 0.1);
       oscillators.push(osc);
     }
 
@@ -89,32 +90,24 @@ export class AudioEngine {
     });
   }
 
-  /** Release a note with a natural decay. */
   noteOff(midi: number): void {
     const voice = this.voices.get(midi);
     if (!voice || voice.releasedAt !== null) return;
 
     const ctx = this.ctx!;
     const now = ctx.currentTime;
-    const releaseTime = 0.4;
+    const releaseTime = 0.3;
 
+    voice.gainNode.gain.cancelScheduledValues(now);
     voice.gainNode.gain.setValueAtTime(voice.gainNode.gain.value, now);
     voice.gainNode.gain.linearRampToValueAtTime(0, now + releaseTime);
     voice.releasedAt = now;
 
-    // Stop oscillators after release
-    const stopAt = now + releaseTime + 0.05;
-    for (const osc of voice.oscillators) {
-      osc.stop(stopAt);
-    }
-
-    // Clean up
     setTimeout(() => {
       this.voices.delete(midi);
     }, (releaseTime + 0.1) * 1000);
   }
 
-  /** Immediately kill all voices */
   allNotesOff(): void {
     for (const midi of this.voices.keys()) {
       this.noteOff(midi);
@@ -129,5 +122,4 @@ export class AudioEngine {
   }
 }
 
-/** Singleton */
 export const audioEngine = new AudioEngine();
